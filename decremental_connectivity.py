@@ -9,14 +9,28 @@ def leaf_trimming(tree):
 # input a rooted tree
 # find a path decomposition and return a list of paths (where each path is a list)
 def compress_tree(tree):
-    pass
+    path_decomp = []
+    path_queue = [[tree]]
+    while (len(path_queue) > 0):
+        path = path_queue.pop(0)
+        node = path[-1]
+        if len(node.children) == 0:
+            path_decomp.append(path)
+        elif len(node.children) == 1:
+            path_queue.append(path + node.children)
+        else:
+            path_queue.append(path + [node.children[0]])
+            for i in range(1, len(node.children)):
+                path_queue.append([node.children[i]])
+    return path_decomp
 
 
 # TreeNode class points to other TreeNodes (its children) and stores some properties
 class TreeNode:
 
     # constructor
-    def __init__(self):
+    def __init__(self, value):
+        self.value = value
         self.children = []
         self.in_top = True
         self.bottom_tree_root = None
@@ -25,12 +39,24 @@ class TreeNode:
     def add_child(self, child):
         self.children.append(child)
 
+    def __repr__(self):
+        return str(self.value)
+
+    def __str__(self):
+        return self.stringify(0)
+
+    def stringify(self, indent):
+        ret = "--"*indent + str(self.value) + "\n"
+        for child in self.children:
+            ret += child.stringify(indent + 1)
+        return ret
+
 
 # BottomTreeRoot is a type of TreeNode that also stores info about the bottom-tree
 class BottomTreeRoot(TreeNode):
 
-    def __init__(self):
-        super()
+    def __init__(self, value):
+        super(value)
         self.nonexistent_edges = []  # this should be a bitvector of what edges we've removed; starts empty, update as we go
 
 
@@ -71,4 +97,21 @@ class DecrementalConnectivityTree:
     # return True if connected in compressed top tree, False otherwise
     def _query_top_path_connectivity(self, v, w):
         pass
+
+
+
+
+def test_tree_compression():
+    root = TreeNode(5)
+    c1 = TreeNode(4)
+    root.add_child(c1)
+    c2 = TreeNode(4)
+    root.add_child(c2)
+    c3 = TreeNode(0)
+    root.add_child(c3)
+    c1.add_child(TreeNode(6))
+    print(root)
+    print(compress_tree(root))
+
+test_tree_compression()
     
