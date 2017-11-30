@@ -5,6 +5,7 @@
 # return (top tree, list of bottom trees)
 def leaf_trimming(tree):
     pass
+    return None, []
 
 # input a rooted tree
 # find a path decomposition and return a list of paths (where each path is a list)
@@ -57,7 +58,7 @@ class BottomTreeRoot(TreeNode):
 
     def __init__(self, value):
         super(value)
-        self.nonexistent_edges = []  # this should be a bitvector of what edges we've removed; starts empty, update as we go
+        self.nonexistent_edges = 0  # this should be a bitvector of what edges we've removed; starts empty, update as we go
 
 
 # the class we've all been waiting for... i.e. the one that can do queries and deletes
@@ -65,13 +66,36 @@ class DecrementalConnectivityTree:
 
     # constructor
     def __init__(self, tree):
+        self.N = self._get_N(tree)
         self.top_tree, self.bottom_trees = leaf_trimming(tree)
         self.masks = {}  # map nodes to their masks
-        self._preprocess_masks() 
+        self._preprocess_masks()
+
+
+    # figure out how many nodes are in the tree total
+    def _get_N(self, tree):
+        count = 0
+        count_queue = [tree]
+        while (count_queue):
+            node = count_queue.pop(0)
+            count += 1
+            count_queue += node.children
+        return count
+            
 
     # set all the masks
     def _preprocess_masks(self):
-        pass
+        for tree_root in self.bottom_trees:
+            self.masks[tree_root] = 1
+            nodes_processed = 1
+            assign_mask_queue = [(c, 1) for c in tree_root.children]  # pairs of child, parent-mask
+            while (assign_mask_queue):
+                node, parent_mask = assign_mask_queue.pop(0)
+                node_mask = parent_mask + (1 << nodes_processed)
+                self.masks[node] = node_mask
+                nodes_processed += 1
+                assign_mask_queue += [(c, node_mask) for c in node.children]
+        return
 
     # return True if nodes v and w are connected in the tree, False otherwise
     def query_connectivity(self, v, w):
@@ -86,7 +110,12 @@ class DecrementalConnectivityTree:
     # (so if you want to query about two things that aren't, query v to root(v's bottom tree), etc.
     # return True if connected in bottom tree, False otherwise
     def _query_bottom_connectivity(self, v, w):
-        pass
+        assert (v.bottom_tree_root is w.bottom_tree_root)
+        original_path = v ^ w
+        deleted_edges = v.bottom_tree_root.nonexistent_edges
+        deleted_on_path = original_path & deleted_edges
+        return deleted_on_path == 0
+        
 
     # inputs v and w must both be nodes in the top
     # return True if connected in compressed top tree, False otherwise
@@ -112,6 +141,8 @@ def test_tree_compression():
     c1.add_child(TreeNode(6))
     print(root)
     print(compress_tree(root))
+    d = DecrementalConnectivityTree(root)
+    print(d.N)
 
 test_tree_compression()
     
